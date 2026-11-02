@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sydney's 2026-2027 Wishlist</title>
+    <title>Pink Christmas Wishlist</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -165,41 +165,44 @@
 
         <!-- Top Stats Banner & Action Toolbar -->
         <section class="glass-card rounded-3xl p-6 mb-8 shadow-lg">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+            <div class="flex flex-col lg:flex-row gap-6 items-stretch lg:items-center justify-between">
                 
-                <!-- Total Items -->
-                <div class="flex items-center space-x-4 bg-white/60 p-4 rounded-2xl border border-pinky-100">
-                    <div class="w-12 h-12 rounded-xl bg-pinky-100 text-pinky-500 flex items-center justify-center text-xl shadow-inner">
-                        <i class="fas fa-gift"></i>
+                <!-- Stats Container -->
+                <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                    <!-- Total Items -->
+                    <div class="flex-1 lg:flex-none flex items-center space-x-4 bg-white/60 p-4 rounded-2xl border border-pinky-100 min-w-[180px]">
+                        <div class="w-12 h-12 rounded-xl bg-pinky-100 text-pinky-500 flex items-center justify-center text-xl shadow-inner">
+                            <i class="fas fa-gift"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase font-medium">Total Items</p>
+                            <h3 id="stat-total-items" class="text-2xl font-bold text-gray-800">0</h3>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase font-medium">Total Items</p>
-                        <h3 id="stat-total-items" class="text-2xl font-bold text-gray-800">0</h3>
-                    </div>
-                </div>
 
-                <!-- Total Estimated Cost -->
-                <div class="flex items-center space-x-4 bg-white/60 p-4 rounded-2xl border border-pinky-100">
-                    <div class="w-12 h-12 rounded-xl bg-pinky-100 text-pinky-500 flex items-center justify-center text-xl shadow-inner">
-                        <i class="fas fa-tag"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase font-medium">Total Value</p>
-                        <h3 id="stat-total-price" class="text-2xl font-bold text-pinky-600">$0.00</h3>
+                    <!-- Total Estimated Cost -->
+                    <div class="flex-1 lg:flex-none flex items-center space-x-4 bg-white/60 p-4 rounded-2xl border border-pinky-100 min-w-[180px]">
+                        <div class="w-12 h-12 rounded-xl bg-pinky-100 text-pinky-500 flex items-center justify-center text-xl shadow-inner">
+                            <i class="fas fa-tag"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase font-medium">Total Value</p>
+                            <h3 id="stat-total-price" class="text-2xl font-bold text-pinky-600">$0.00</h3>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Toggle Controls (Share / View Mode) -->
-                <div class="flex flex-col sm:flex-row gap-3 justify-end">
-                    <button id="btn-copy-view-link" onclick="copyViewOnlyLink()" class="flex-1 sm:flex-none px-4 py-3 bg-pinky-500 hover:bg-pinky-600 text-white rounded-2xl font-medium text-sm transition-all shadow-md hover:shadow-pinky-300/50 flex items-center justify-center space-x-2">
+                <div class="flex flex-wrap sm:flex-nowrap lg:flex-wrap xl:flex-nowrap gap-3 justify-start sm:justify-end w-full lg:w-auto">
+                    <button id="btn-copy-view-link" onclick="copyViewOnlyLink()" class="flex-1 px-4 py-3 bg-pinky-500 hover:bg-pinky-600 text-white rounded-2xl font-medium text-sm transition-all shadow-md hover:shadow-pinky-300/50 flex items-center justify-center space-x-2 whitespace-nowrap">
                         <i class="fas fa-link"></i>
                         <span>Copy View Link</span>
                     </button>
-                    <button id="btn-toggle-share-view" onclick="toggleShareView()" class="flex-1 sm:flex-none px-4 py-3 bg-white hover:bg-pinky-50 text-pinky-600 border border-pinky-300 rounded-2xl font-medium text-sm transition-all shadow-sm flex items-center justify-center space-x-2">
+                    <button id="btn-toggle-share-view" onclick="toggleShareView()" class="flex-1 px-4 py-3 bg-white hover:bg-pinky-50 text-pinky-600 border border-pinky-300 rounded-2xl font-medium text-sm transition-all shadow-sm flex items-center justify-center space-x-2 whitespace-nowrap">
                         <i id="share-view-icon" class="fas fa-eye"></i>
                         <span id="share-view-text">Family Preview Mode</span>
                     </button>
-                    <button id="btn-share-options" onclick="openShareModal()" class="flex-1 sm:flex-none px-4 py-3 bg-white hover:bg-pinky-50 text-pinky-600 border border-pinky-200 rounded-2xl font-medium text-sm transition-all shadow-sm flex items-center justify-center space-x-2">
+                    <button id="btn-share-options" onclick="openShareModal()" class="flex-1 px-4 py-3 bg-white hover:bg-pinky-50 text-pinky-600 border border-pinky-200 rounded-2xl font-medium text-sm transition-all shadow-sm flex items-center justify-center space-x-2 whitespace-nowrap">
                         <i class="fas fa-share-nodes"></i>
                         <span>More Options</span>
                     </button>
