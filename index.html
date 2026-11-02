@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pink Christmas Wishlist</title>
+    <title>Sydney's 2026-2027 Wishlist</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -215,11 +215,19 @@
                 <!-- Filter buttons dynamic injected -->
             </div>
 
-            <!-- Add Gift Button (Hidden in View Only mode) -->
-            <button id="btn-add-item" onclick="openModal()" class="px-6 py-3 bg-pinky-600 hover:bg-pinky-700 text-white rounded-2xl font-semibold text-sm transition-all shadow-lg hover:shadow-pinky-400/40 flex items-center justify-center space-x-2">
-                <i class="fas fa-plus-circle"></i>
-                <span>Add Wish List Item</span>
-            </button>
+            <div class="flex gap-2">
+                <!-- Amazon Import Button -->
+                <button id="btn-amazon-import" onclick="openAmazonModal()" class="flex-1 sm:flex-none px-4 py-3 bg-white border border-[#ff9900] text-[#ff9900] hover:bg-[#fff5e6] rounded-2xl font-semibold text-sm transition-all shadow-sm flex items-center justify-center space-x-2">
+                    <i class="fab fa-amazon"></i>
+                    <span class="hidden sm:inline">Import Amazon</span>
+                </button>
+
+                <!-- Add Gift Button (Hidden in View Only mode) -->
+                <button id="btn-add-item" onclick="openModal()" class="flex-1 sm:flex-none px-6 py-3 bg-pinky-600 hover:bg-pinky-700 text-white rounded-2xl font-semibold text-sm transition-all shadow-lg hover:shadow-pinky-400/40 flex items-center justify-center space-x-2">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Add Item</span>
+                </button>
+            </div>
         </div>
 
         <!-- Wishlist Items Grid -->
@@ -349,6 +357,35 @@
         </div>
     </div>
 
+    <!-- Modal Form: Amazon Import -->
+    <div id="amazon-modal" class="fixed inset-0 z-50 hidden bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-pinky-100 overflow-hidden transform transition-all">
+            <div class="bg-gradient-to-r from-[#ff9900] to-[#ffb84d] p-6 border-b border-[#e68a00] flex justify-between items-center text-white">
+                <h3 class="font-playfair text-xl font-bold">Import from Amazon</h3>
+                <button onclick="closeAmazonModal()" class="text-white/80 hover:text-white transition">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-gray-600 leading-relaxed">
+                    Amazon doesn't allow automatic links, but you can use our <strong>Smart Paste</strong>!<br><br>
+                    1. Go to your Amazon Wishlist page.<br>
+                    2. Press <b>Ctrl+A</b> (or Select All) and copy the whole page.<br>
+                    3. Paste the text below and we'll extract the items & prices automatically!
+                </p>
+                <textarea id="amazon-paste-area" rows="6" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#ff9900] focus:ring-2 focus:ring-[#ff9900]/20 outline-none text-sm transition custom-scrollbar" placeholder="Paste your copied Amazon Wishlist text here..."></textarea>
+                
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                    <button type="button" onclick="closeAmazonModal()" class="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition">Cancel</button>
+                    <button type="button" onclick="processAmazonPaste()" class="px-6 py-2.5 bg-[#ff9900] hover:bg-[#e68a00] text-white rounded-xl text-sm font-semibold shadow transition flex items-center space-x-2">
+                        <i class="fas fa-magic"></i>
+                        <span>Extract Items</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Application Script -->
     <script>
         // Initial sample items for decorative demo
@@ -413,6 +450,7 @@
                         // Setup shared view UI
                         document.getElementById('shared-view-banner').classList.remove('hidden');
                         document.getElementById('btn-add-item').classList.add('hidden');
+                        if(document.getElementById('btn-amazon-import')) document.getElementById('btn-amazon-import').classList.add('hidden');
                         document.getElementById('btn-copy-view-link').classList.add('hidden');
                         document.getElementById('btn-toggle-share-view').classList.add('hidden');
                         document.getElementById('app-heading').innerHTML = `Shared Wishlist <span class="text-pinky-400">🎁</span>`;
@@ -626,6 +664,68 @@
             }
         }
 
+        // --- Amazon Import Logic ---
+        function openAmazonModal() {
+            document.getElementById('amazon-modal').classList.remove('hidden');
+            document.getElementById('amazon-paste-area').value = '';
+        }
+
+        function closeAmazonModal() {
+            document.getElementById('amazon-modal').classList.add('hidden');
+        }
+
+        function processAmazonPaste() {
+            const text = document.getElementById('amazon-paste-area').value;
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            
+            let importedCount = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                
+                // Match standard Amazon prices in pasted text like $19.99 or $1,099.00
+                const priceMatch = line.match(/^\$?([0-9,]+\.[0-9]{2})/);
+                
+                if (priceMatch) {
+                    const price = parseFloat(priceMatch[1].replace(/,/g, ''));
+                    
+                    // Walk backwards to find the title. Avoid review lines, prime markers, etc.
+                    let title = "Amazon Item";
+                    for (let j = i - 1; j >= Math.max(0, i - 4); j--) {
+                        if (!lines[j].match(/out of 5 stars/i) && !lines[j].match(/^[0-9,]+$/) && !lines[j].match(/Prime/i) && !lines[j].match(/bought in past month/i) && !lines[j].match(/Delivery/i)) {
+                            title = lines[j];
+                            break;
+                        }
+                    }
+
+                    if (title && price) {
+                        items.push({
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                            title: title,
+                            price: price,
+                            category: 'Other',
+                            url: '', // Links are stripped out in raw text copies unfortunately
+                            image: '',
+                            notes: 'Imported from Amazon'
+                        });
+                        importedCount++;
+                        // Skip ahead slightly to avoid picking up duplicated sub-prices or used-item prices
+                        i += 2; 
+                    }
+                }
+            }
+
+            if (importedCount > 0) {
+                saveState();
+                renderCategories();
+                renderList();
+                closeAmazonModal();
+                showToast(`Successfully extracted ${importedCount} items!`);
+            } else {
+                alert("We couldn't find any items. Make sure you pasted text that includes the prices (e.g. $19.99).");
+            }
+        }
+
         // --- Share & Viewer Mode ---
         function toggleShareView() {
             isShareView = !isShareView;
@@ -636,11 +736,13 @@
                 btnText.innerText = "Exit Family View";
                 btnIcon.className = "fas fa-pencil-alt";
                 document.getElementById('btn-add-item').classList.add('hidden');
+                document.getElementById('btn-amazon-import').classList.add('hidden');
                 showToast("Entering Family View Mode");
             } else {
                 btnText.innerText = "Family Preview Mode";
                 btnIcon.className = "fas fa-eye";
                 document.getElementById('btn-add-item').classList.remove('hidden');
+                document.getElementById('btn-amazon-import').classList.remove('hidden');
                 showToast("Exited to Edit Mode");
             }
             renderList();
