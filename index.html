@@ -84,6 +84,11 @@
         .snowflake:nth-of-type(8) { left: 80%; animation-delay: 1.5s, 0.8s; }
         .snowflake:nth-of-type(9) { left: 90%; animation-delay: 3.5s, 1.2s; }
 
+        /* Shared Banner Accent */
+        .shared-banner {
+            background: linear-gradient(90deg, #f06595 0%, #e64980 100%);
+        }
+
         .glass-card {
             background: rgba(255, 255, 255, 0.75);
             backdrop-filter: blur(12px);
@@ -127,12 +132,26 @@
     <!-- Top Ribbon Header -->
     <header class="w-full relative z-10 pt-8 pb-6 px-4 text-center">
         <div class="max-w-4xl mx-auto">
+            <!-- Shared View Banner (Shown only when viewing a shared link) -->
+            <div id="shared-view-banner" class="hidden shared-banner text-white px-5 py-3 rounded-2xl shadow-lg mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in">
+                <div class="flex items-center space-x-3 text-left">
+                    <span class="text-2xl">🎁</span>
+                    <div>
+                        <h4 id="shared-banner-title" class="font-bold text-sm sm:text-base">You are viewing a Shared Christmas Wishlist!</h4>
+                        <p class="text-xs text-pinky-100">Browse items, click links to shop, or claim items to let others know you've got it covered.</p>
+                    </div>
+                </div>
+                <button onclick="exitSharedView()" class="px-4 py-2 bg-white text-pinky-600 hover:bg-pinky-50 rounded-xl text-xs font-semibold shadow transition whitespace-nowrap">
+                    Create My Own Wishlist 📋
+                </button>
+            </div>
+
             <div class="inline-flex items-center space-x-2 bg-white/80 px-4 py-1.5 rounded-full border border-pinky-200 shadow-sm mb-3">
                 <i class="fas fa-holly-berry text-pinky-500 animate-pulse"></i>
                 <span class="text-xs uppercase tracking-widest text-pinky-600 font-semibold">Festive Collection</span>
                 <i class="fas fa-holly-berry text-pinky-500 animate-pulse"></i>
             </div>
-            <h1 class="font-playfair text-4xl sm:text-6xl font-bold text-pinky-700 tracking-tight drop-shadow-sm">
+            <h1 id="app-heading" class="font-playfair text-4xl sm:text-6xl font-bold text-pinky-700 tracking-tight drop-shadow-sm">
                 My Christmas Wishlist <span class="text-pinky-400">✨</span>
             </h1>
             <p class="text-pinky-600 mt-2 text-sm sm:text-base font-light">
@@ -172,13 +191,17 @@
 
                 <!-- Toggle Controls (Share / View Mode) -->
                 <div class="flex flex-col sm:flex-row gap-3 justify-end">
+                    <button id="btn-copy-view-link" onclick="copyViewOnlyLink()" class="flex-1 sm:flex-none px-4 py-3 bg-pinky-500 hover:bg-pinky-600 text-white rounded-2xl font-medium text-sm transition-all shadow-md hover:shadow-pinky-300/50 flex items-center justify-center space-x-2">
+                        <i class="fas fa-link"></i>
+                        <span>Copy View Link</span>
+                    </button>
                     <button id="btn-toggle-share-view" onclick="toggleShareView()" class="flex-1 sm:flex-none px-4 py-3 bg-white hover:bg-pinky-50 text-pinky-600 border border-pinky-300 rounded-2xl font-medium text-sm transition-all shadow-sm flex items-center justify-center space-x-2">
                         <i id="share-view-icon" class="fas fa-eye"></i>
-                        <span id="share-view-text">Family View</span>
+                        <span id="share-view-text">Family Preview Mode</span>
                     </button>
-                    <button onclick="openShareModal()" class="flex-1 sm:flex-none px-5 py-3 bg-gradient-to-r from-pinky-400 to-pinky-500 hover:from-pinky-500 hover:to-pinky-600 text-white rounded-2xl font-medium text-sm transition-all shadow-md hover:shadow-pinky-300/50 flex items-center justify-center space-x-2">
+                    <button id="btn-share-options" onclick="openShareModal()" class="flex-1 sm:flex-none px-4 py-3 bg-white hover:bg-pinky-50 text-pinky-600 border border-pinky-200 rounded-2xl font-medium text-sm transition-all shadow-sm flex items-center justify-center space-x-2">
                         <i class="fas fa-share-nodes"></i>
-                        <span>Share List</span>
+                        <span>More Options</span>
                     </button>
                 </div>
             </div>
@@ -286,7 +309,17 @@
                 </button>
             </div>
             <div class="p-6 space-y-6">
-                <!-- Option 1: Copy Plain Text Summary -->
+                <!-- Option 1: Direct Link Sharing -->
+                <div class="bg-pinky-50/60 p-4 rounded-2xl border border-pinky-100">
+                    <h4 class="font-semibold text-sm text-pinky-700 mb-1"><i class="fas fa-link mr-2"></i>View-Only Link</h4>
+                    <p class="text-xs text-gray-500 mb-3">Copy a direct link to send to family & friends. Anyone with this link can view your list and reserve gifts without editing your items.</p>
+                    <button onclick="copyViewOnlyLink()" class="w-full py-2.5 bg-pinky-500 hover:bg-pinky-600 text-white rounded-xl font-medium text-sm transition flex items-center justify-center space-x-2 shadow-sm">
+                        <i class="fas fa-copy"></i>
+                        <span>Copy View Link to Clipboard</span>
+                    </button>
+                </div>
+
+                <!-- Option 2: Copy Plain Text Summary -->
                 <div class="bg-pinky-50/60 p-4 rounded-2xl border border-pinky-100">
                     <h4 class="font-semibold text-sm text-pinky-700 mb-1"><i class="fas fa-copy mr-2"></i>Copy Text Summary</h4>
                     <p class="text-xs text-gray-500 mb-3">Creates a formatted text list of your items, prices, and links to paste into family group chats or emails.</p>
@@ -353,9 +386,50 @@
         let items = [];
         let activeCategory = 'All';
         let isShareView = false;
+        let isSharedLink = false;
+        let claimedItems = {}; // { itemId: claimedByName }
 
         // Load items on initial startup
         window.onload = function() {
+            // Load claimed items state
+            try {
+                claimedItems = JSON.parse(localStorage.getItem('pink_wishlist_claimed') || '{}');
+            } catch(e) {
+                claimedItems = {};
+            }
+
+            // Check if loading from URL Hash (Shared View Link)
+            if (window.location.hash && window.location.hash.startsWith('#view=')) {
+                try {
+                    const encodedData = window.location.hash.replace('#view=', '');
+                    const decodedJson = decodeURIComponent(atob(encodedData));
+                    const payload = JSON.parse(decodedJson);
+                    
+                    if (payload && Array.isArray(payload.items)) {
+                        items = payload.items;
+                        isSharedLink = true;
+                        isShareView = true;
+                        
+                        // Setup shared view UI
+                        document.getElementById('shared-view-banner').classList.remove('hidden');
+                        document.getElementById('btn-add-item').classList.add('hidden');
+                        document.getElementById('btn-copy-view-link').classList.add('hidden');
+                        document.getElementById('btn-toggle-share-view').classList.add('hidden');
+                        document.getElementById('app-heading').innerHTML = `Shared Wishlist <span class="text-pinky-400">🎁</span>`;
+                    }
+                } catch(e) {
+                    console.error("Failed to parse shared URL wishlist data", e);
+                    loadLocalItems();
+                }
+            } else {
+                loadLocalItems();
+            }
+
+            renderCategories();
+            renderList();
+        };
+
+        function loadLocalItems() {
             const saved = localStorage.getItem('pink_christmas_wishlist');
             if (saved) {
                 try {
@@ -363,6 +437,23 @@
                 } catch(e) {
                     items = defaultItems;
                 }
+            } else {
+                items = defaultItems;
+            }
+        }
+
+        // Save State to LocalStorage (only when editing)
+        function saveState() {
+            if (!isSharedLink) {
+                localStorage.setItem('pink_christmas_wishlist', JSON.stringify(items));
+            }
+            renderList();
+        }
+
+        // Save Claimed items locally for the viewer
+        function saveClaimedState() {
+            localStorage.setItem('pink_wishlist_claimed', JSON.stringify(claimedItems));
+        }
             } else {
                 items = defaultItems;
             }
@@ -427,9 +518,11 @@
             grid.innerHTML = filteredItems.map(item => {
                 const fallbackImg = `https://placehold.co/600x400/ffe6ec/d6336c?text=${encodeURIComponent(item.title)}`;
                 const itemImg = item.image && item.image.trim() !== '' ? item.image : fallbackImg;
+                const isClaimed = !!claimedItems[item.id];
+                const claimedBy = claimedItems[item.id] || '';
 
                 return `
-                    <div class="glass-card rounded-3xl overflow-hidden shadow-lg border border-white flex flex-col justify-between transition-transform duration-300 hover:-translate-y-1">
+                    <div class="glass-card rounded-3xl overflow-hidden shadow-lg border border-white flex flex-col justify-between transition-transform duration-300 hover:-translate-y-1 ${isClaimed ? 'opacity-80 bg-pinky-50/40' : ''}">
                         <div>
                             <!-- Card Image Banner -->
                             <div class="relative h-48 w-full bg-pinky-50 overflow-hidden">
@@ -437,6 +530,13 @@
                                 <span class="absolute top-3 right-3 bg-white/90 backdrop-blur text-pinky-600 font-semibold text-xs px-3 py-1 rounded-full border border-pinky-200 shadow-sm">
                                     ${item.category || 'General'}
                                 </span>
+                                ${isClaimed ? `
+                                    <div class="absolute inset-0 bg-pinky-900/30 backdrop-blur-[2px] flex items-center justify-center">
+                                        <span class="bg-pinky-600 text-white font-bold text-xs px-4 py-2 rounded-full shadow-lg transform -rotate-6">
+                                            <i class="fas fa-gift mr-1"></i> Reserved by ${escapeHtml(claimedBy)}
+                                        </span>
+                                    </div>
+                                ` : ''}
                             </div>
 
                             <!-- Card Body -->
@@ -455,23 +555,33 @@
                         </div>
 
                         <!-- Card Action Buttons -->
-                        <div class="px-5 pb-5 pt-0 flex items-center space-x-2">
-                            ${item.url ? `
-                                <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="flex-1 py-2.5 px-4 bg-pinky-100 hover:bg-pinky-200 text-pinky-700 rounded-xl font-medium text-xs text-center transition flex items-center justify-center space-x-1">
-                                    <span>View / Buy</span>
-                                    <i class="fas fa-external-link-alt text-[10px]"></i>
-                                </a>
-                            ` : `
-                                <span class="flex-1 py-2.5 px-4 bg-gray-100 text-gray-400 rounded-xl font-medium text-xs text-center">No Link</span>
-                            `}
+                        <div class="px-5 pb-5 pt-0 flex flex-col space-y-2">
+                            <div class="flex items-center space-x-2">
+                                ${item.url ? `
+                                    <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="flex-1 py-2.5 px-4 bg-pinky-100 hover:bg-pinky-200 text-pinky-700 rounded-xl font-medium text-xs text-center transition flex items-center justify-center space-x-1">
+                                        <span>View / Buy</span>
+                                        <i class="fas fa-external-link-alt text-[10px]"></i>
+                                    </a>
+                                ` : `
+                                    <span class="flex-1 py-2.5 px-4 bg-gray-100 text-gray-400 rounded-xl font-medium text-xs text-center">No Link</span>
+                                `}
 
-                            <!-- Edit/Delete Action Controls (Hidden in Family Share View Mode) -->
-                            ${!isShareView ? `
-                                <button onclick="editItem('${item.id}')" class="p-2.5 text-gray-400 hover:text-pinky-600 bg-white hover:bg-pinky-50 border border-gray-200 rounded-xl transition">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="deleteItem('${item.id}')" class="p-2.5 text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 border border-gray-200 rounded-xl transition">
-                                    <i class="fas fa-trash-alt"></i>
+                                <!-- Edit/Delete Action Controls -->
+                                ${!isShareView ? `
+                                    <button onclick="editItem('${item.id}')" class="p-2.5 text-gray-400 hover:text-pinky-600 bg-white hover:bg-pinky-50 border border-gray-200 rounded-xl transition">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="deleteItem('${item.id}')" class="p-2.5 text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 border border-gray-200 rounded-xl transition">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+
+                            <!-- Claim Gift Option for Viewers -->
+                            ${isShareView ? `
+                                <button onclick="toggleClaimItem('${item.id}')" class="w-full py-2 px-3 ${isClaimed ? 'bg-gray-200 text-gray-600 hover:bg-gray-300' : 'bg-pinky-500 text-white hover:bg-pinky-600'} rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1.5 shadow-sm">
+                                    <i class="fas ${isClaimed ? 'fa-undo' : 'fa-hand-holding-heart'}"></i>
+                                    <span>${isClaimed ? 'Unreserve Gift' : 'Reserve / I\'m Buying This!'}</span>
                                 </button>
                             ` : ''}
                         </div>
@@ -560,24 +670,74 @@
 
         // Toggle Share View (Family Read-Only Mode)
         function toggleShareView() {
+            if (isSharedLink) return;
             isShareView = !isShareView;
             const btnText = document.getElementById('share-view-text');
             const btnIcon = document.getElementById('share-view-icon');
             const addBtn = document.getElementById('btn-add-item');
 
             if (isShareView) {
-                btnText.textContent = "Exit Family View";
+                btnText.textContent = "Exit Family Preview";
                 btnIcon.className = "fas fa-eye-slash";
                 addBtn.classList.add('hidden');
-                showToast('Switched to View-Only mode for family');
+                showToast('Switched to View-Only mode preview');
             } else {
-                btnText.textContent = "Family View";
+                btnText.textContent = "Family Preview Mode";
                 btnIcon.className = "fas fa-eye";
                 addBtn.classList.remove('hidden');
                 showToast('Switched back to Edit mode');
             }
 
             renderList();
+        }
+
+        // Generate & Copy View-Only Link
+        function copyViewOnlyLink() {
+            if (items.length === 0) {
+                showToast('Add items to your wishlist before sharing!');
+                return;
+            }
+
+            try {
+                const payload = { items: items, created: Date.now() };
+                const jsonStr = JSON.stringify(payload);
+                const encodedData = btoa(encodeURIComponent(jsonStr));
+                
+                const baseUrl = window.location.href.split('#')[0];
+                const shareableUrl = `${baseUrl}#view=${encodedData}`;
+
+                const textarea = document.createElement('textarea');
+                textarea.value = shareableUrl;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                showToast('View-only link copied to clipboard! Share with family 🎁');
+                closeShareModal();
+            } catch(e) {
+                console.error(e);
+                showToast('Could not generate view link.');
+            }
+        }
+
+        // Reserve / Claim Gift toggle for family members
+        function toggleClaimItem(id) {
+            if (claimedItems[id]) {
+                delete claimedItems[id];
+                showToast('Item unreserved');
+            } else {
+                const name = prompt("Enter your name so others know you are getting this gift:") || "Family Member";
+                claimedItems[id] = name.trim();
+                showToast(`Reserved by ${claimedItems[id]}!`);
+            }
+            saveClaimedState();
+            renderList();
+        }
+
+        function exitSharedView() {
+            window.location.hash = '';
+            window.location.reload();
         }
 
         // Export & Share Functions
